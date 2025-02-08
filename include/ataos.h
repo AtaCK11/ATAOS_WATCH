@@ -32,6 +32,10 @@ public:
     weather_screen watch_weather_screen;
 
     // semaphores
-    //SemaphoreHandle_t xWeatherScreenSemaphore = NULL;
-    //SemaphoreHandle_t xHeartScreenSemaphore = NULL;
+    SemaphoreHandle_t xWeatherScreenSemaphore = NULL;
+    SemaphoreHandle_t xHeartScreenSemaphore = NULL;
+
+    // Screen drawing functions
+    void smooth_print(String text);
+    void agressive_print(String text);
 };

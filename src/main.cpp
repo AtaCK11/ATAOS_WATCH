@@ -5,6 +5,7 @@
 #include "WiFi.h"
 
 #include "bitmaps/cankaya_logo_bitmap.h"
+#include "bitmaps/loading_bitmaps.h"
 #include "bitmaps/weather_bitmaps.h"
 #include "watch_screen/tft_screen.h"
 #include "watch_screen/heart_screen/heart_screen.h"
@@ -45,7 +46,8 @@ void setup() {
     ataos.watch_tft.drawBitmap(20, 4, epd_bitmap_cankaya_logo, 120, 120, TFT_YELLOW_COLOR);
 
     //ataos.xWeatherScreenSemaphore = xSemaphoreCreateBinary();
-    //ataos.xHeartScreenSemaphore = xSemaphoreCreateBinary();
+    ataos.xHeartScreenSemaphore = xSemaphoreCreateBinary();
+    ataos.watch_screen.xScreenDrawSemaphore = xSemaphoreCreateBinary();
 
     delay(2500);
     pinMode(BUTTON_PIN_LEFT, INPUT_PULLUP);
@@ -64,18 +66,42 @@ void setup() {
     ataos.watch_heart_sensor.particleSensor.setPulseAmplitudeGreen(0);
 
     ataos.watch_tft.fillScreen(ST7735_BLACK);
-    ataos.watch_tft.setTextColor(ST7735_WHITE);
-    ataos.watch_tft.setTextSize(2);
-    ataos.watch_tft.setCursor(10, 20);
-    ataos.watch_tft.println("  ATAOS          WATCH");
-    int random_adder = 5;
-    for (int progress = 0; progress < 150; progress += random_adder) {
-        ataos.watch_tft.fillRect(10, 80, progress, 20, ST7735_CYAN);
-        delay(esp_random() % 100 + 150);
-        while (random_adder > 50 || random_adder < 15) {
-            random_adder = esp_random() % 100;
+    for (int i = 0; i < 9; i++) {
+        //ataos.watch_tft.fillScreen(ST7735_BLACK);
+        if (i == 0) {
+            ataos.watch_tft.drawRGBBitmap(30, 10, epd_bitmap_loading_frame1, 100, 100);
+        } else if (i == 1) {
+            ataos.watch_tft.drawRGBBitmap(30, 10, epd_bitmap_loading_frame2, 100, 100);
+        } else if (i == 2) {
+            ataos.watch_tft.drawRGBBitmap(30, 10, epd_bitmap_loading_frame3, 100, 100);
+        } else if (i == 3) {
+            ataos.watch_tft.drawRGBBitmap(30, 10, epd_bitmap_loading_frame4, 100, 100);
+        } else if (i == 4) {
+            ataos.watch_tft.drawRGBBitmap(30, 10, epd_bitmap_loading_frame1, 100, 100);
+        } else if (i == 5) {
+            ataos.watch_tft.drawRGBBitmap(30, 10, epd_bitmap_loading_frame2, 100, 100);
+        } else if (i == 6) {
+            ataos.watch_tft.drawRGBBitmap(30, 10, epd_bitmap_loading_frame3, 100, 100);
+        } else if (i == 7) {
+            ataos.watch_tft.drawRGBBitmap(30, 10, epd_bitmap_loading_frame4, 100, 100);
+        } else if (i == 8) {
+            ataos.watch_tft.drawRGBBitmap(30, 10, epd_bitmap_loading_frame1, 100, 100);
         }
+        delay(300);
     }
+
+    delay(1000);
+    ataos.watch_tft.fillScreen(ST7735_BLACK);
+    ataos.watch_tft.setTextColor(ST7735_WHITE);
+    ataos.watch_tft.setCursor(10, 50);
+    ataos.smooth_print("Old Text!!!!");
+    delay(1000);
+    // Print new text
+    ataos.watch_tft.setTextColor(ST7735_WHITE);
+    ataos.watch_tft.setCursor(10, 50);
+    ataos.smooth_print("New Text");  // Old text is erased automatically
+
+    delay(3000);
 
     LOG_DEBUG(SETUP_LOG_TAG, "Setup Complete... Starting Loop");
 
@@ -131,7 +157,8 @@ void update_tft_screen(void * pvParameters) {
         case BUTTON_RIGHT_PRESSED:
             screen_text = "Right Button Pressed - Heart Rate Menu";
             ataos.watch_screen.wannabe_screen_page = SCREEN_HEARTRATE;
-            //xSemaphoreGive(ataos.xHeartScreenSemaphore);
+            //ataos.watch_screen.current_screen_page = SCREEN_HEARTRATE;
+            xSemaphoreGive(ataos.xHeartScreenSemaphore);
             break;
 
         case BUTTON_LEFT_DOUBLE_CLICK:
@@ -182,11 +209,11 @@ void update_tft_screen(void * pvParameters) {
         }
 
         if (screen_needs_update) {
-            ataos.watch_tft.fillRect(0, 30, 160, 140, ST7735_BLACK); // clear the screen
-            ataos.watch_tft.setTextColor(TFT_WHITE_COLOR);
-            ataos.watch_tft.setTextSize(2);
-            ataos.watch_tft.setCursor(0, 30);
-            ataos.watch_tft.println(screen_text);
+            //ataos.watch_tft.fillRect(0, 30, 160, 140, ST7735_BLACK); // clear the screen
+            //ataos.watch_tft.setTextColor(TFT_WHITE_COLOR);
+            //ataos.watch_tft.setTextSize(2);
+            //ataos.watch_tft.setCursor(0, 30);
+            //ataos.watch_tft.println(screen_text);
             ataos.watch_screen.current_screen_page = ataos.watch_screen.wannabe_screen_page;
             LOG_INFO(SCREEN_LOG_TAG, "Screen Updated: %s", screen_text.c_str());
         }

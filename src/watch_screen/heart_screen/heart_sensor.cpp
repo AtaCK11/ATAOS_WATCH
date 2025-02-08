@@ -36,9 +36,9 @@ void heart_sensor::run_heart_sensor(void *pvParameters) {
                 }
                 beat_avg /= RATE_SIZE;
             }
-        }
+        } 
         
-        //LOG_INFO(HEART_SENSOR_LOG_TAG, "IR=%d, BPM=%d, Avg BPM=%d", irValue, beatsPerMinute, beatAvg);
+        //LOG_INFO(HEART_SENSOR_LOG_TAG, "IR=%d, BPM=%d, Avg BPM=%d", irValue, mbpm, beat_avg);
         vTaskDelay(pdMS_TO_TICKS(5));
         
     }
