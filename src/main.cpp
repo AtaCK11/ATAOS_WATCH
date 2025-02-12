@@ -45,9 +45,9 @@ void setup() {
     ataos.watch_tft.fillScreen(ST7735_BLACK);
     ataos.watch_tft.drawBitmap(20, 4, epd_bitmap_cankaya_logo, 120, 120, TFT_YELLOW_COLOR);
 
-    //ataos.xWeatherScreenSemaphore = xSemaphoreCreateBinary();
+    ataos.xWeatherScreenSemaphore = xSemaphoreCreateBinary();
+    ataos.xHomeScreenSemaphore = xSemaphoreCreateBinary();
     ataos.xHeartScreenSemaphore = xSemaphoreCreateBinary();
-    ataos.watch_screen.xScreenDrawSemaphore = xSemaphoreCreateBinary();
 
     delay(2500);
     pinMode(BUTTON_PIN_LEFT, INPUT_PULLUP);
@@ -92,7 +92,6 @@ void setup() {
 
     delay(1000);
     ataos.watch_tft.fillScreen(ST7735_BLACK);
-    ataos.watch_tft.setTextColor(ST7735_WHITE);
     ataos.watch_tft.setCursor(10, 50);
     ataos.smooth_print("Old Text!!!!");
     delay(1000);
@@ -106,28 +105,32 @@ void setup() {
     LOG_DEBUG(SETUP_LOG_TAG, "Setup Complete... Starting Loop");
 
     ataos.watch_tft.fillScreen(ST7735_BLACK);
-    ataos.watch_tft.setTextColor(ST7735_WHITE);
     ataos.watch_tft.setTextSize(2);
     ataos.watch_tft.setCursor(10, 30);
     ataos.watch_tft.println("PRESS HOME     TO START");
 
-    xTaskCreate(update_tft_screen, "Update TFT Screen", 2048, NULL, 1, NULL);
-    xTaskCreate(handle_button_press, "Handle Button Press", 4098, NULL, 1, NULL);
+    xTaskCreate(update_tft_screen, "Update TFT Screen", 2048, NULL, 2, NULL);
+    xTaskCreate(handle_button_press, "Handle Button Press", 4098, NULL, 2, NULL);
 
     xTaskCreate([](void * pvParameters) {
         ataos.watch_weather.request_weather(pvParameters);
-    }, "Request Weather", 4096, & ataos, 1, NULL);
-    // send &ataos_weather and &tft to the function
+    }, "Request Weather", 4098, &ataos, 1, NULL);
+    xTaskCreate([](void * pvParameters) {
+        ataos.watch_time.request_time(pvParameters);
+    }, "Request Time", 4098, &ataos, 1, NULL);
     xTaskCreate([](void * pvParameters) {
         ataos.watch_topbar.update_topbar_weather(pvParameters);
-    }, "Request Weather", 4096, & ataos, 1, NULL);
+    }, "Upd Topbar Weather", 4098, &ataos, 1, NULL);
     xTaskCreate([](void * pvParameters) {
         ataos.watch_heart_sensor.run_heart_sensor(pvParameters);
-    }, "Heart Sensor Tasks", 4096, & ataos, 1, NULL);
-
+    }, "Heart Sensor Tasks", 4098, &ataos, 1, NULL);
     xTaskCreate([](void * pvParameters) {
         ataos.watch_heart_screen.draw_heart_screen(pvParameters);
-    }, "Heart Screen", 4096, & ataos, 1, NULL);
+    }, "Heart Screen", 4098, &ataos, 1, NULL);
+    xTaskCreate([](void * pvParameters) {
+        ataos.watch_home_screen.draw_home_screen(pvParameters);
+    }, "Home Screen", 4098, &ataos, 1, NULL);
+
 
     LOG_DEBUG(SETUP_LOG_TAG, "Starting Scheduler");
     //vTaskStartScheduler();
@@ -140,24 +143,27 @@ void update_tft_screen(void * pvParameters) {
     while (1) {
         String screen_text = "ERR";
         bool screen_needs_update = false;
-        //tft.fillScreen(ST7735_BLACK);  // clear the screen
+
 
         switch (ataos.watch_screen.button_state) {
         case BUTTON_LEFT_PRESSED:
             screen_text = "Left Button Pressed - Weather Menu";
             ataos.watch_screen.wannabe_screen_page = SCREEN_WEATHER;
+            ataos.clear_screen(); // Clear the screen area
             //xSemaphoreGive(ataos.xWeatherScreenSemaphore);
             break;
 
         case BUTTON_HOME_PRESSED:
             screen_text = "Home Button Pressed - Home Screen";
             ataos.watch_screen.wannabe_screen_page = SCREEN_HOME;
+            ataos.clear_screen(); // Clear the screen area
+            xSemaphoreGive(ataos.xHomeScreenSemaphore);
             break;
 
         case BUTTON_RIGHT_PRESSED:
             screen_text = "Right Button Pressed - Heart Rate Menu";
             ataos.watch_screen.wannabe_screen_page = SCREEN_HEARTRATE;
-            //ataos.watch_screen.current_screen_page = SCREEN_HEARTRATE;
+            ataos.clear_screen(); // Clear the screen area
             xSemaphoreGive(ataos.xHeartScreenSemaphore);
             break;
 
@@ -209,7 +215,7 @@ void update_tft_screen(void * pvParameters) {
         }
 
         if (screen_needs_update) {
-            //ataos.watch_tft.fillRect(0, 30, 160, 140, ST7735_BLACK); // clear the screen
+            //ataos.watch_tft.fillRect(0, 30, 160, 140, ST7735_BLACK); // Clear the screen area
             //ataos.watch_tft.setTextColor(TFT_WHITE_COLOR);
             //ataos.watch_tft.setTextSize(2);
             //ataos.watch_tft.setCursor(0, 30);

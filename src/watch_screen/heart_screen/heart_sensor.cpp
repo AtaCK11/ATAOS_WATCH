@@ -3,7 +3,7 @@
 
 void heart_sensor::run_heart_sensor(void *pvParameters) {
     ataos_firmware *ataos = (struct ataos_firmware *)pvParameters;
-    TickType_t lastBeatTick = xTaskGetTickCount();
+    TickType_t last_beat_tick = xTaskGetTickCount();
     while (1) {
         //LOG_DEBUG(HEART_SENSOR_LOG_TAG, "Found MAX30105");
         //LOG_DEBUG(HEART_SENSOR_LOG_TAG, "%d", configTICK_RATE_HZ);
@@ -14,11 +14,11 @@ void heart_sensor::run_heart_sensor(void *pvParameters) {
         }
 
         if (checkForBeat(irValue)) {
-            TickType_t currentTick = xTaskGetTickCount();
-            TickType_t deltaTicks = currentTick - lastBeatTick;
-            lastBeatTick = currentTick;
+            TickType_t current_tick = xTaskGetTickCount();
+            TickType_t delta_ticks = current_tick - last_beat_tick;
+            last_beat_tick = current_tick;
 
-            float deltaSeconds = (deltaTicks * portTICK_PERIOD_MS) / 1000.0;
+            float deltaSeconds = (delta_ticks * portTICK_PERIOD_MS) / 1000.0;
 
             // Calculate beats per minute (BPM)
             float bpm = 60.0 / deltaSeconds;

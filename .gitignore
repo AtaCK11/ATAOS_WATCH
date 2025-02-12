@@ -8,3 +8,4 @@ sdkconfig.esp32doit-devkit-v1
 .vscode/extensions.json
 include/README
 platformio.ini
+.vscode/settings.json

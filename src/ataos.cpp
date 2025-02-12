@@ -28,7 +28,22 @@ void ataos_firmware::smooth_print(String text) {
     watch_screen.old_screen_text = text;
 }
 
+void ataos_firmware::smooth_print(int value) {
+    smooth_print(String(value));
+}
+
+void ataos_firmware::smooth_print(float value) {
+    smooth_print(String(value, 2));
+}
 
 void ataos_firmware::agressive_print(String text) {
 
+}
+
+void ataos_firmware::clear_screen() {
+    watch_tft.fillRect(0, 30, 160, 140, ST7735_BLACK); // Clear the screen area
+}
+
+void ataos_firmware::clear_entire_screen() {
+    watch_tft.fillScreen(ST7735_BLACK); // Clear the screen area
 }

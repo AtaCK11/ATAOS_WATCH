@@ -37,7 +37,7 @@ void topbar::update_topbar_weather(void *pvParameters) {
             ataos->watch_tft.setTextColor(ST7735_WHITE);
             ataos->watch_tft.setTextSize(1);
             int temp = (int)ataos->watch_weather.received_weather.temperature;
-            ataos->watch_tft.print(String(temp) + "\"C");
+            ataos->smooth_print(String(temp) + "\"C");
             // restore the old cursor position
             ataos->watch_tft.setCursor(old_cursor_x, old_cursor_y);
         } else if (strcmp(ataos->watch_weather.received_weather.weather_description, "few clouds") == 0) {

@@ -17,7 +17,6 @@ public:
     bool button_in_cooldown = false;
 
     // Screen drawing
-    SemaphoreHandle_t xScreenDrawSemaphore = NULL;
     String old_screen_text = "";
     
 
