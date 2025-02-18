@@ -48,6 +48,7 @@ void setup() {
     ataos.xWeatherScreenSemaphore = xSemaphoreCreateBinary();
     ataos.xHomeScreenSemaphore = xSemaphoreCreateBinary();
     ataos.xHeartScreenSemaphore = xSemaphoreCreateBinary();
+    ataos.xUpdateTimeSemaphore = xSemaphoreCreateBinary();
 
     delay(2500);
     pinMode(BUTTON_PIN_LEFT, INPUT_PULLUP);
@@ -62,7 +63,7 @@ void setup() {
     delay(200);
 
     ataos.watch_heart_sensor.particleSensor.setup();
-    ataos.watch_heart_sensor.particleSensor.setPulseAmplitudeRed(0x0A); //Turn Red LED to low to indicate sensor is running
+    ataos.watch_heart_sensor.particleSensor.setPulseAmplitudeRed(0x00); //Turn Red LED to low to indicate sensor is running
     ataos.watch_heart_sensor.particleSensor.setPulseAmplitudeGreen(0);
 
     ataos.watch_tft.fillScreen(ST7735_BLACK);
@@ -109,29 +110,36 @@ void setup() {
     ataos.watch_tft.setCursor(10, 30);
     ataos.watch_tft.println("PRESS HOME     TO START");
 
-    xTaskCreate(update_tft_screen, "Update TFT Screen", 2048, NULL, 2, NULL);
-    xTaskCreate(handle_button_press, "Handle Button Press", 4098, NULL, 2, NULL);
+    xTaskCreate(update_tft_screen, "Update TFT Screen", 2048, NULL, 3, NULL);
+    xTaskCreate(handle_button_press, "Handle Button Press", 4098, NULL, 3, NULL);
 
     xTaskCreate([](void * pvParameters) {
         ataos.watch_weather.request_weather(pvParameters);
-    }, "Request Weather", 4098, &ataos, 1, NULL);
+    }, "Request Weather", 4098, &ataos, 2, NULL);
     xTaskCreate([](void * pvParameters) {
         ataos.watch_time.request_time(pvParameters);
-    }, "Request Time", 4098, &ataos, 1, NULL);
+    }, "Request Time", 4098, &ataos, 2, NULL);
+
     xTaskCreate([](void * pvParameters) {
         ataos.watch_topbar.update_topbar_weather(pvParameters);
-    }, "Upd Topbar Weather", 4098, &ataos, 1, NULL);
+    }, "Upd Topbar Weather", 4098, &ataos, 2, NULL);
     xTaskCreate([](void * pvParameters) {
-        ataos.watch_heart_sensor.run_heart_sensor(pvParameters);
-    }, "Heart Sensor Tasks", 4098, &ataos, 1, NULL);
-    xTaskCreate([](void * pvParameters) {
-        ataos.watch_heart_screen.draw_heart_screen(pvParameters);
-    }, "Heart Screen", 4098, &ataos, 1, NULL);
+        ataos.watch_weather_screen.draw_weather_screen(pvParameters);
+    }, "Weather Screen", 4098, &ataos, 2, NULL);
     xTaskCreate([](void * pvParameters) {
         ataos.watch_home_screen.draw_home_screen(pvParameters);
-    }, "Home Screen", 4098, &ataos, 1, NULL);
+    }, "Home Screen", 4098, &ataos, 2, NULL);
+    xTaskCreate([](void * pvParameters) {
+        ataos.watch_heart_screen.draw_heart_screen(pvParameters);
+    }, "Heart Screen", 4098, &ataos, 2, NULL);
+    
 
-
+    xTaskCreate([](void * pvParameters) {
+        ataos.watch_time.calculate_time(pvParameters);
+    }, "RTC Timer", 4098, &ataos, 1, NULL);
+    xTaskCreate([](void * pvParameters) {
+        ataos.watch_heart_sensor.run_heart_sensor(pvParameters);
+    }, "Heart Sensor Tasks", 4098, &ataos, 2, NULL);
     LOG_DEBUG(SETUP_LOG_TAG, "Starting Scheduler");
     //vTaskStartScheduler();
 }
@@ -150,7 +158,7 @@ void update_tft_screen(void * pvParameters) {
             screen_text = "Left Button Pressed - Weather Menu";
             ataos.watch_screen.wannabe_screen_page = SCREEN_WEATHER;
             ataos.clear_screen(); // Clear the screen area
-            //xSemaphoreGive(ataos.xWeatherScreenSemaphore);
+            xSemaphoreGive(ataos.xWeatherScreenSemaphore);
             break;
 
         case BUTTON_HOME_PRESSED:

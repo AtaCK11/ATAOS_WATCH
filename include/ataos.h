@@ -24,6 +24,8 @@
 class ataos_firmware {
 public:
 
+    bool first_start = true;
+
     Adafruit_ST7735 watch_tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_RST);
 
     settings watch_settings;
@@ -42,12 +44,17 @@ public:
     SemaphoreHandle_t xWeatherScreenSemaphore = NULL;
     SemaphoreHandle_t xHomeScreenSemaphore = NULL;
     SemaphoreHandle_t xHeartScreenSemaphore = NULL;
+    SemaphoreHandle_t xUpdateTimeSemaphore = NULL;
 
     // Screen drawing functions
     void smooth_print(String text);
     void smooth_print(int value);
     void smooth_print(float value);
+    void smooth_print_middle(String text, int text_size);
+    void smooth_print_middle(int value, int text_size);
+    void smooth_print_middle(float value, int text_size);
     void agressive_print(String text);
+    void clear_smooth_print();
     void clear_screen();
     void clear_entire_screen();
 };

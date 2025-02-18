@@ -2,12 +2,9 @@
 
 #include "logger/logger.h"
 
-// weather, battery
 class weather_screen {
 public:
+    void draw_weather_screen(void *pvParameters);
 
-
-private:
-
-
+    bool is_weather_screen_active = false;
 };

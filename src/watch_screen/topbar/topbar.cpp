@@ -30,16 +30,11 @@ void topbar::update_topbar_weather(void *pvParameters) {
             // clear sky
             LOG_DEBUG(TOPBAR_WEATHER_LOG_TAG, "Clear Sky");
             // store the old cursor position
-            int old_cursor_x = ataos->watch_tft.getCursorX();
-            int old_cursor_y = ataos->watch_tft.getCursorY();
             ataos->watch_tft.drawRGBBitmap(5, 3, epd_bitmap_topbar_clear_sky, 20, 20);
             ataos->watch_tft.setCursor(30, 9);
-            ataos->watch_tft.setTextColor(ST7735_WHITE);
             ataos->watch_tft.setTextSize(1);
             int temp = (int)ataos->watch_weather.received_weather.temperature;
             ataos->smooth_print(String(temp) + "\"C");
-            // restore the old cursor position
-            ataos->watch_tft.setCursor(old_cursor_x, old_cursor_y);
         } else if (strcmp(ataos->watch_weather.received_weather.weather_description, "few clouds") == 0) {
             // few clouds
             LOG_DEBUG(TOPBAR_WEATHER_LOG_TAG, "Few Clouds");

@@ -17,6 +17,7 @@ typedef struct {
 class rtc_time {
 public:
     void request_time(void *pvParameters);
+    void calculate_time(void *pvParameters);
     
     TimeInformation received_time;
     TimeRequest requested_time;
@@ -25,7 +26,7 @@ public:
 
     // write a default constructor for received_weather and requested_weather
     rtc_time() {
-        strcpy(received_time.day_name, "Monday");
+        strcpy(received_time.day_name, "Sali");
         strcpy(received_time.date, "13.02.2025");
         received_time.hour = 12;
         received_time.minute = 35;

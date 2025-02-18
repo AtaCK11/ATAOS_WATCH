@@ -21,7 +21,6 @@ void on_data_recv_time(const uint8_t* messageInfo, const uint8_t *data, int data
 void rtc_time::request_time(void *pvParameters) {
     ataos_firmware *ataos = (struct ataos_firmware *)pvParameters;
     while (1) {
-
         // print the mac address of  ataos->watch_settings->server_mac_adress
         LOG_DEBUG(TIME_REQUEST_LOG_TAG, "Server MAC Address: %02X:%02X:%02X:%02X:%02X:%02X", ataos->watch_settings.server_mac_adress[0],  ataos->watch_settings.server_mac_adress[1],  ataos->watch_settings.server_mac_adress[2],  ataos->watch_settings.server_mac_adress[3],  ataos->watch_settings.server_mac_adress[4],  ataos->watch_settings.server_mac_adress[5]);
 
@@ -63,7 +62,7 @@ void rtc_time::request_time(void *pvParameters) {
         // Wait for response (timeout of 5 seconds)
         vTaskDelay(pdMS_TO_TICKS(5000)); // 5 seconds
         if (server_received_time.hour != received_time.hour ||
-            server_received_time.minute != received_time.minute ||
+            //server_received_time.minute != received_time.minute ||
             server_received_time.second != received_time.second) {
             // If response is received, store time data
             received_time = server_received_time;
@@ -74,11 +73,33 @@ void rtc_time::request_time(void *pvParameters) {
 
         // Go to sleep
         LOG_DEBUG(TIME_REQUEST_LOG_TAG, "Disabling ESP-NOW...");
+        esp_now_unregister_recv_cb();
         esp_now_deinit();
         //esp_now
         WiFi.mode(WIFI_OFF);
 
 
-        vTaskDelay(pdMS_TO_TICKS(10000)); // Sleep for 10 seconds before the next cycle --> will be around 5 hours or if its requested by the user
+        vTaskDelay(pdMS_TO_TICKS(15000)); // Sleep for 10 seconds before the next cycle --> will be around 5 hours or if its requested by the user
+    }
+}
+
+void rtc_time::calculate_time(void *pvParameters) {
+    ataos_firmware *ataos = (struct ataos_firmware *)pvParameters;
+    while (1) {
+        LOG_DEBUG(TIME_REQUEST_LOG_TAG, "+1 Minute Time...");
+        if (ataos->watch_time.received_time.minute == 59) {
+            ataos->watch_time.received_time.minute = 0;
+            if (ataos->watch_time.received_time.hour == 23) {
+                ataos->watch_time.received_time.hour = 0;
+            } else {
+                ataos->watch_time.received_time.hour = ataos->watch_time.received_time.hour + 1;
+            }
+        } else {
+            ataos->watch_time.received_time.minute = ataos->watch_time.received_time.minute + 1;
+        }
+        if (ataos->watch_screen.current_screen_page == SCREEN_HOME) {
+            xSemaphoreGive(ataos->xHomeScreenSemaphore);
+        }
+        vTaskDelay(pdMS_TO_TICKS(60001)); // Sleep for 1 minute
     }
 }

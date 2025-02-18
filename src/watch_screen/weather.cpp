@@ -21,7 +21,6 @@ void on_data_recv_weather(const uint8_t* messageInfo, const uint8_t *data, int d
 void weather::request_weather(void *pvParameters) {
     ataos_firmware *ataos = (struct ataos_firmware *)pvParameters;
     while (1) {
-
         // print the mac address of  ataos->watch_settings->server_mac_adress
         LOG_DEBUG(WEATHER_REQUEST_LOG_TAG, "Server MAC Address: %02X:%02X:%02X:%02X:%02X:%02X", ataos->watch_settings.server_mac_adress[0],  ataos->watch_settings.server_mac_adress[1],  ataos->watch_settings.server_mac_adress[2],  ataos->watch_settings.server_mac_adress[3],  ataos->watch_settings.server_mac_adress[4],  ataos->watch_settings.server_mac_adress[5]);
 
@@ -74,6 +73,7 @@ void weather::request_weather(void *pvParameters) {
 
         // Go to sleep
         LOG_DEBUG(WEATHER_REQUEST_LOG_TAG, "Disabling ESP-NOW...");
+        esp_now_unregister_recv_cb();
         esp_now_deinit();
         //esp_now
         WiFi.mode(WIFI_OFF);
