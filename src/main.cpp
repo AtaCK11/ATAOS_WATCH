@@ -63,7 +63,7 @@ void setup() {
     delay(200);
 
     ataos.watch_heart_sensor.particleSensor.setup();
-    ataos.watch_heart_sensor.particleSensor.setPulseAmplitudeRed(0x00); //Turn Red LED to low to indicate sensor is running
+    ataos.watch_heart_sensor.particleSensor.setPulseAmplitudeRed(0x01); //Turn Red LED to low to indicate sensor is running
     ataos.watch_heart_sensor.particleSensor.setPulseAmplitudeGreen(0);
 
     ataos.watch_tft.fillScreen(ST7735_BLACK);
@@ -90,16 +90,6 @@ void setup() {
         }
         delay(300);
     }
-
-    delay(1000);
-    ataos.watch_tft.fillScreen(ST7735_BLACK);
-    ataos.watch_tft.setCursor(10, 50);
-    ataos.smooth_print("Old Text!!!!");
-    delay(1000);
-    // Print new text
-    ataos.watch_tft.setTextColor(ST7735_WHITE);
-    ataos.watch_tft.setCursor(10, 50);
-    ataos.smooth_print("New Text");  // Old text is erased automatically
 
     delay(3000);
 
@@ -129,17 +119,27 @@ void setup() {
     xTaskCreate([](void * pvParameters) {
         ataos.watch_home_screen.draw_home_screen(pvParameters);
     }, "Home Screen", 4098, &ataos, 2, NULL);
+
     xTaskCreate([](void * pvParameters) {
         ataos.watch_heart_screen.draw_heart_screen(pvParameters);
     }, "Heart Screen", 4098, &ataos, 2, NULL);
+    xTaskCreate([](void * pvParameters) {
+        ataos.watch_heart_screen.heart_screen_update_bpm(pvParameters);
+    }, "Heart Screen BPM", 4098, &ataos, 2, NULL);
     
 
     xTaskCreate([](void * pvParameters) {
         ataos.watch_time.calculate_time(pvParameters);
     }, "RTC Timer", 4098, &ataos, 1, NULL);
+
+
     xTaskCreate([](void * pvParameters) {
         ataos.watch_heart_sensor.run_heart_sensor(pvParameters);
     }, "Heart Sensor Tasks", 4098, &ataos, 2, NULL);
+    xTaskCreate([](void * pvParameters) {
+        ataos.watch_heart_sensor.read_temperature(pvParameters);
+    }, "Heart Sensor Temp", 4098, &ataos, 2, NULL);
+
     LOG_DEBUG(SETUP_LOG_TAG, "Starting Scheduler");
     //vTaskStartScheduler();
 }

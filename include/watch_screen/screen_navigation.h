@@ -5,9 +5,9 @@
 #define BUTTON_PIN_HOME    33
 #define BUTTON_PIN_RIGHT   25
 
-#define BUTTON_DEBOUNCE_DELAY        50    // debounce delay
-#define BUTTON_DOUBLE_CLICK_TIME     500   // double-click detection
-#define BUTTON_HOLD_TIME             2000  // hold detection
+#define BUTTON_DEBOUNCE_DELAY        50     // debounce delay
+#define BUTTON_DOUBLE_CLICK_TIME     500    // double-click detection
+#define BUTTON_HOLD_TIME             2000   // hold detection
 #define BUTTON_COOLDOWN_TIME         1500   // cooldown period after double-click or holding
 
 // Button States

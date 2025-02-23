@@ -34,7 +34,6 @@ void rtc_time::request_time(void *pvParameters) {
             LOG_ERROR(TIME_REQUEST_LOG_TAG, "ESP-NOW initialization failed!");
         }
 
-
         esp_now_peer_info_t peerInfo = {};
         memcpy(peerInfo.peer_addr,  ataos->watch_settings.server_mac_adress, 6); // Assign server MAC address
         peerInfo.channel = 0;

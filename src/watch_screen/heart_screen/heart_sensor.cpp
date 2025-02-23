@@ -43,3 +43,16 @@ void heart_sensor::run_heart_sensor(void *pvParameters) {
         
     }
 }
+
+void heart_sensor::read_temperature(void *pvParameters) {
+    ataos_firmware *ataos = (struct ataos_firmware *)pvParameters;
+    while (1) {
+        particleSensor.enableDIETEMPRDY();
+        vTaskDelay(pdMS_TO_TICKS(1000)); // 1 sec
+        temperature = particleSensor.readTemperature();
+        LOG_INFO(HEART_SENSOR_LOG_TAG, "Body Temperature: %.2f", temperature);
+        particleSensor.disableDIETEMPRDY();
+        vTaskDelay(pdMS_TO_TICKS(60000)); // 1 min
+        
+    }
+}
