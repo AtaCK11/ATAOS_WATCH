@@ -86,7 +86,7 @@ void rtc_time::calculate_time(void *pvParameters) {
     ataos_firmware *ataos = (struct ataos_firmware *)pvParameters;
     while (1) {
         LOG_DEBUG(TIME_REQUEST_LOG_TAG, "+1 Minute Time...");
-        if (ataos->watch_time.received_time.minute == 59) {
+        if (ataos->watch_time.received_time.minute == 2) {
             ataos->watch_time.received_time.minute = 0;
             if (ataos->watch_time.received_time.hour == 23) {
                 ataos->watch_time.received_time.hour = 0;

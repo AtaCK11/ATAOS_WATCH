@@ -63,8 +63,10 @@ void setup() {
     delay(200);
 
     ataos.watch_heart_sensor.particleSensor.setup();
-    ataos.watch_heart_sensor.particleSensor.setPulseAmplitudeRed(0x01); //Turn Red LED to low to indicate sensor is running
+    ataos.watch_heart_sensor.particleSensor.setPulseAmplitudeRed(0x33); // 0x33 = 10mA
     ataos.watch_heart_sensor.particleSensor.setPulseAmplitudeGreen(0);
+
+    //ataos.watch_heart_sensor.particleSensor.setPulseAmplitudeIR(0); // 0x33 = 10mA
 
     ataos.watch_tft.fillScreen(ST7735_BLACK);
     for (int i = 0; i < 9; i++) {
@@ -100,7 +102,7 @@ void setup() {
     ataos.watch_tft.setCursor(10, 30);
     ataos.watch_tft.println("PRESS HOME     TO START");
 
-    xTaskCreate(update_tft_screen, "Update TFT Screen", 2048, NULL, 3, NULL);
+    xTaskCreate(update_tft_screen, "Update TFT Screen", 4098, NULL, 3, NULL);
     xTaskCreate(handle_button_press, "Handle Button Press", 4098, NULL, 3, NULL);
 
     xTaskCreate([](void * pvParameters) {
@@ -139,6 +141,9 @@ void setup() {
     xTaskCreate([](void * pvParameters) {
         ataos.watch_heart_sensor.read_temperature(pvParameters);
     }, "Heart Sensor Temp", 4098, &ataos, 2, NULL);
+    xTaskCreate([](void * pvParameters) {
+        ataos.watch_heart_sensor.read_spo2(pvParameters);
+    }, "Heart Sensor SpO2", 4098, &ataos, 2, NULL);
 
     LOG_DEBUG(SETUP_LOG_TAG, "Starting Scheduler");
     //vTaskStartScheduler();
@@ -178,20 +183,19 @@ void update_tft_screen(void * pvParameters) {
         case BUTTON_LEFT_DOUBLE_CLICK:
             screen_text = "Left Button Double Clicked - No Idea";
             ataos.watch_screen.wannabe_screen_page = ataos.watch_screen.current_screen_page;
-            ataos.watch_tft.drawRGBBitmap(1, 1, epd_bitmap_rain_static, 31, 31);
+            //ataos.watch_tft.drawRGBBitmap(1, 1, epd_bitmap_rain_static, 31, 31);
             break;
 
         case BUTTON_HOME_DOUBLE_CLICK:
             screen_text = "Home Button Double Clicked - No Idea";
             ataos.watch_screen.wannabe_screen_page = ataos.watch_screen.current_screen_page;
-            ataos.watch_tft.drawRGBBitmap(1, 1, epd_bitmap_snow_static, 31, 31);
-
+            //ataos.watch_tft.drawRGBBitmap(1, 1, epd_bitmap_snow_static, 31, 31);
             break;
 
         case BUTTON_RIGHT_DOUBLE_CLICK:
             screen_text = "Right Button Double Clicked - No Idea";
             ataos.watch_screen.wannabe_screen_page = ataos.watch_screen.current_screen_page;
-            ataos.watch_tft.drawRGBBitmap(1, 1, epd_bitmap_clear_sky_static, 31, 31);
+           // ataos.watch_tft.drawRGBBitmap(1, 1, epd_bitmap_clear_sky_static, 31, 31);
             break;
 
         case BUTTON_LEFT_HOLDING:
