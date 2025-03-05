@@ -8,9 +8,9 @@ void home_screen::draw_home_screen(void *pvParameters) {
             LOG_DEBUG(HOME_SCREEN_LOG_TAG, "Home Screen Active");
 
             // log the data that will be displayed on the screen
-            LOG_INFO(HOME_SCREEN_LOG_TAG, "Date: %s", ataos->watch_time.received_time.date);
-            LOG_INFO(HOME_SCREEN_LOG_TAG, "Day: %s", ataos->watch_time.received_time.day_name);
-            LOG_INFO(HOME_SCREEN_LOG_TAG, "Time: %d:%d", ataos->watch_time.received_time.hour, ataos->watch_time.received_time.minute);
+            LOG_DEBUG(HOME_SCREEN_LOG_TAG, "Date: %s", ataos->watch_time.received_time.date);
+            LOG_DEBUG(HOME_SCREEN_LOG_TAG, "Day: %s", ataos->watch_time.received_time.day_name);
+            LOG_DEBUG(HOME_SCREEN_LOG_TAG, "Time: %d:%d", ataos->watch_time.received_time.hour, ataos->watch_time.received_time.minute);
             
             ataos->clear_smooth_print();
             // Draw the current date
@@ -63,6 +63,6 @@ void home_screen::draw_home_screen(void *pvParameters) {
         }
 
         // Small delay to prevent hogging the CPU
-        vTaskDelay(pdMS_TO_TICKS(50));
+        vTaskDelay(pdMS_TO_TICKS(WATCH_SCREEN_PRESS_RESPONSE_TIMER));
     }
 }

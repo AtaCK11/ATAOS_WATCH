@@ -27,15 +27,16 @@ void rtc_time::request_time(void *pvParameters) {
         // Wake up, do ESP-NOW call with the server (call API, get time data)
         LOG_DEBUG(TIME_REQUEST_LOG_TAG, "Enabling ESP-NOW...");
 
-        // Set device as Station mode (required for ESP-NOW)
-        WiFi.mode(WIFI_STA);
+        if (WiFi.getMode() != WIFI_STA) {
+            WiFi.mode(WIFI_STA);
+        }
         vTaskDelay(pdMS_TO_TICKS(200)); //delay(100);
         if (esp_now_init() != ESP_OK) {
             LOG_ERROR(TIME_REQUEST_LOG_TAG, "ESP-NOW initialization failed!");
         }
 
         esp_now_peer_info_t peerInfo = {};
-        memcpy(peerInfo.peer_addr,  ataos->watch_settings.server_mac_adress, 6); // Assign server MAC address
+        memcpy(peerInfo.peer_addr,  ataos->watch_settings.server_mac_adress, 6);
         peerInfo.channel = 0;
         peerInfo.encrypt = false;
         if (esp_now_add_peer(&peerInfo) != ESP_OK) {
@@ -53,19 +54,18 @@ void rtc_time::request_time(void *pvParameters) {
         // Send time request via ESP-NOW
         esp_err_t result = esp_now_send(ataos->watch_settings.server_mac_adress, (uint8_t *)&requested_time, sizeof(requested_time));
         if (result == ESP_OK) {
-            LOG_INFO(TIME_REQUEST_LOG_TAG, "Time request sent!");
+            LOG_DEBUG(TIME_REQUEST_LOG_TAG, "Time request sent!");
         } else {
             LOG_ERROR(TIME_REQUEST_LOG_TAG, "Failed to send request! Error: 0x%X", result);
         }
 
         // Wait for response (timeout of 5 seconds)
         vTaskDelay(pdMS_TO_TICKS(5000)); // 5 seconds
-        if (server_received_time.hour != received_time.hour ||
-            //server_received_time.minute != received_time.minute ||
-            server_received_time.second != received_time.second) {
+        if (server_received_time.hour != NULL ||
+            server_received_time.second != NULL) {
             // If response is received, store time data
             received_time = server_received_time;
-            LOG_INFO(TIME_REQUEST_LOG_TAG, "Time data received!");
+            LOG_DEBUG(TIME_REQUEST_LOG_TAG, "Time data received!");
         } else {
             LOG_ERROR(TIME_REQUEST_LOG_TAG, "No response received from server.");
         }
@@ -78,7 +78,7 @@ void rtc_time::request_time(void *pvParameters) {
         WiFi.mode(WIFI_OFF);
 
 
-        vTaskDelay(pdMS_TO_TICKS(15000)); // Sleep for 10 seconds before the next cycle --> will be around 5 hours or if its requested by the user
+        vTaskDelay(pdMS_TO_TICKS(SERVER_TIME_REQUEST_TIMER)); // Sleep for 10 seconds before the next cycle --> will be around 5 hours or if its requested by the user
     }
 }
 
@@ -86,7 +86,7 @@ void rtc_time::calculate_time(void *pvParameters) {
     ataos_firmware *ataos = (struct ataos_firmware *)pvParameters;
     while (1) {
         LOG_DEBUG(TIME_REQUEST_LOG_TAG, "+1 Minute Time...");
-        if (ataos->watch_time.received_time.minute == 2) {
+        if (ataos->watch_time.received_time.minute == 59) {
             ataos->watch_time.received_time.minute = 0;
             if (ataos->watch_time.received_time.hour == 23) {
                 ataos->watch_time.received_time.hour = 0;
@@ -99,6 +99,6 @@ void rtc_time::calculate_time(void *pvParameters) {
         if (ataos->watch_screen.current_screen_page == SCREEN_HOME) {
             xSemaphoreGive(ataos->xHomeScreenSemaphore);
         }
-        vTaskDelay(pdMS_TO_TICKS(60001)); // Sleep for 1 minute
+        vTaskDelay(pdMS_TO_TICKS(RTC_CALCULATE_TIME)); // Sleep for 1 minute
     }
 }

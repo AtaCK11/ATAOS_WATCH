@@ -18,10 +18,8 @@ void heart_screen::draw_heart_screen(void *pvParameters) {
             //ataos->smooth_print("Heart Rate");
 
             ataos->watch_tft.setCursor(0, 40);
-            if (ataos->watch_heart_sensor.beat_valid) {
-                String bpm = String(ataos->watch_heart_sensor.beat) + " bpm";
-                ataos->line_removal_print_middle(bpm, 2);
-            }
+            String bpm_avg = String(ataos->watch_heart_sensor.beat_avg) + "bpm";
+            ataos->line_removal_print_middle(bpm_avg, 3);
 
             ataos->watch_tft.setCursor(0, 85);
             if (ataos->watch_heart_sensor.spo2_valid) {
@@ -32,13 +30,9 @@ void heart_screen::draw_heart_screen(void *pvParameters) {
             ataos->watch_tft.setCursor(0, 110);
             String body_temp = String(ataos->watch_heart_sensor.temperature) + " C";
             ataos->line_removal_print_middle(body_temp, 2);
-
-            last_screen_page = SCREEN_HEARTRATE; // Update the last screen mode
-
         }
 
-        // Small delay to prevent hogging the CPU
-        vTaskDelay(pdMS_TO_TICKS(50));
+        vTaskDelay(pdMS_TO_TICKS(WATCH_SCREEN_PRESS_RESPONSE_TIMER));
     }
 }
 
@@ -49,11 +43,10 @@ void heart_screen::heart_screen_update_bpm(void *pvParameters) {
         if (ataos->watch_screen.current_screen_page == SCREEN_HEARTRATE) {
 
             ataos->watch_tft.setCursor(0, 40);
-            String bpm = String(ataos->watch_heart_sensor.beat) + " bpm";
-            String bpm_avg = String(ataos->watch_heart_sensor.beat_avg) + " bpm";
-            if (ataos->watch_heart_sensor.beat_valid) {
-                ataos->line_removal_print_middle(bpm, 2);
-            }
+            String bpm = String(ataos->watch_heart_sensor.beat) + "bpm";
+            String bpm_avg = String(ataos->watch_heart_sensor.beat_avg) + "bpm";
+            ataos->line_removal_print_middle(bpm_avg, 3);
+            
 
             ataos->watch_tft.setCursor(0, 85);
             String spo2 = String(ataos->watch_heart_sensor.spo2) + " SpO2";
@@ -66,12 +59,12 @@ void heart_screen::heart_screen_update_bpm(void *pvParameters) {
             ataos->line_removal_print_middle(body_temp, 2);
 
             
-            LOG_INFO(HEART_SCREEN_LOG_TAG, "BPM: %s", bpm);
-            LOG_INFO(HEART_SCREEN_LOG_TAG, "BPM_AVG: %s", bpm_avg);
-            LOG_INFO(HEART_SCREEN_LOG_TAG, "SpO2: %s", spo2);
-            LOG_INFO(HEART_SCREEN_LOG_TAG, "TEMP: %s", body_temp);
+            LOG_DEBUG(HEART_SCREEN_LOG_TAG, "BPM: %s", bpm);
+            LOG_DEBUG(HEART_SCREEN_LOG_TAG, "BPM_AVG: %s", bpm_avg);
+            LOG_DEBUG(HEART_SCREEN_LOG_TAG, "SpO2: %s", spo2);
+            LOG_DEBUG(HEART_SCREEN_LOG_TAG, "TEMP: %s", body_temp);
         }
 
-        vTaskDelay(pdMS_TO_TICKS(5000));
+        vTaskDelay(pdMS_TO_TICKS(HEART_SCREEN_UPDATE_BPM_TIMER));
     }
 }

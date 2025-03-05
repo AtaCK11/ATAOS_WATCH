@@ -9,6 +9,7 @@
 
 WeatherData server_received_weather;
 
+
 void on_data_recv_weather(const uint8_t* messageInfo, const uint8_t *data, int data_len) {
     // Check if the received data is the weather data
     LOG_DEBUG(WEATHER_REQUEST_LOG_TAG, "ESP-NOW Data received from server! Length: %d", data_len);
@@ -24,22 +25,22 @@ void weather::request_weather(void *pvParameters) {
         // print the mac address of  ataos->watch_settings->server_mac_adress
         LOG_DEBUG(WEATHER_REQUEST_LOG_TAG, "Server MAC Address: %02X:%02X:%02X:%02X:%02X:%02X", ataos->watch_settings.server_mac_adress[0],  ataos->watch_settings.server_mac_adress[1],  ataos->watch_settings.server_mac_adress[2],  ataos->watch_settings.server_mac_adress[3],  ataos->watch_settings.server_mac_adress[4],  ataos->watch_settings.server_mac_adress[5]);
 
-        // Wake up, do ESP-NOW call with the server (call API, get weather data)
         LOG_DEBUG(WEATHER_REQUEST_LOG_TAG, "Enabling ESP-NOW...");
 
-        // Set device as Station mode (required for ESP-NOW)
-        WiFi.mode(WIFI_STA);
+        if (WiFi.getMode() != WIFI_STA) {
+            WiFi.mode(WIFI_STA);
+        }
         vTaskDelay(pdMS_TO_TICKS(200)); //delay(100);
         if (esp_now_init() != ESP_OK) {
             LOG_ERROR(WEATHER_REQUEST_LOG_TAG, "ESP-NOW initialization failed!");
         }
 
         
-        esp_now_peer_info_t peerInfo = {};
-        memcpy(peerInfo.peer_addr,  ataos->watch_settings.server_mac_adress, 6); // Assign server MAC address
-        peerInfo.channel = 0;
-        peerInfo.encrypt = false;
-        if (esp_now_add_peer(&peerInfo) != ESP_OK) {
+        esp_now_peer_info_t peer_info = {};
+        memcpy(peer_info.peer_addr,  ataos->watch_settings.server_mac_adress, 6);
+        peer_info.channel = 0;
+        peer_info.encrypt = false;
+        if (esp_now_add_peer(&peer_info) != ESP_OK) {
             LOG_ERROR(WEATHER_REQUEST_LOG_TAG, "Failed to add ESP-NOW peer!");
         }
 
@@ -54,18 +55,18 @@ void weather::request_weather(void *pvParameters) {
         // Send weather request via ESP-NOW
         esp_err_t result = esp_now_send(ataos->watch_settings.server_mac_adress, (uint8_t *)&requested_weather, sizeof(requested_weather));
         if (result == ESP_OK) {
-            LOG_INFO(WEATHER_REQUEST_LOG_TAG, "Weather request sent!");
+            LOG_DEBUG(WEATHER_REQUEST_LOG_TAG, "Weather request sent!");
         } else {
             LOG_ERROR(WEATHER_REQUEST_LOG_TAG, "Failed to send request! Error: 0x%X", result);
         }
 
         // Wait for response (timeout of 5 seconds)
-        vTaskDelay(pdMS_TO_TICKS(5000)); // 5 seconds
-        if (server_received_weather.temperature != received_weather.temperature ||
-            server_received_weather.humidity != received_weather.humidity) {
+        vTaskDelay(pdMS_TO_TICKS(5000));
+        if (server_received_weather.temperature != NULL ||
+            server_received_weather.humidity != NULL) {
             // If response is received, store weather data
             received_weather = server_received_weather;
-            LOG_INFO(WEATHER_REQUEST_LOG_TAG, "Weather data received!");
+            LOG_DEBUG(WEATHER_REQUEST_LOG_TAG, "Weather data received!");
             responseReceived = false; // Reset the flag
         } else {
             LOG_ERROR(WEATHER_REQUEST_LOG_TAG, "No response received from server.");
@@ -77,10 +78,8 @@ void weather::request_weather(void *pvParameters) {
         esp_now_deinit();
         //esp_now
         WiFi.mode(WIFI_OFF);
-        LOG_ERROR(WEATHER_REQUEST_LOG_TAG, "%d", responseReceived);
-        responseReceived = false;
 
 
-        vTaskDelay(pdMS_TO_TICKS(10000)); // Sleep for 10 seconds before the next cycle --> will be around 5 hours or if its requested by the user
+        vTaskDelay(pdMS_TO_TICKS(SERVER_WEATHER_REQUEST_TIMER)); // Sleep for 10 seconds before the next cycle --> will be around 5 hours or if its requested by the user
     }
 }

@@ -21,8 +21,31 @@
 
 #include "settings.h"
 
+
 class ataos_firmware {
 public:
+    // Screen drawing functions
+
+    void smooth_print(String text);
+    void smooth_print(int value);
+    void smooth_print(float value);
+    void smooth_print_middle(String text, int text_size);
+    void smooth_print_middle(int value, int text_size);
+    void smooth_print_middle(float value, int text_size);
+
+    void line_removal_print(String text, int text_size);
+    void line_removal_print(int value, int text_size);
+    void line_removal_print(float value, int text_size);
+    void line_removal_print_middle(String text, int text_size);
+    void line_removal_print_middle(int value, int text_size);
+    void line_removal_print_middle(float value, int text_size);
+    
+    void agressive_print(String text);
+    void clear_smooth_print();
+    void clear_screen();
+    void clear_entire_screen();
+
+    void send_data_to_server(void *pvParameters);
 
     bool first_start = true;
 
@@ -46,24 +69,5 @@ public:
     SemaphoreHandle_t xHeartScreenSemaphore = NULL;
     SemaphoreHandle_t xUpdateTimeSemaphore = NULL;
 
-    // Screen drawing functions
-    
-    void smooth_print(String text);
-    void smooth_print(int value);
-    void smooth_print(float value);
-    void smooth_print_middle(String text, int text_size);
-    void smooth_print_middle(int value, int text_size);
-    void smooth_print_middle(float value, int text_size);
 
-    void line_removal_print(String text, int text_size);
-    void line_removal_print(int value, int text_size);
-    void line_removal_print(float value, int text_size);
-    void line_removal_print_middle(String text, int text_size);
-    void line_removal_print_middle(int value, int text_size);
-    void line_removal_print_middle(float value, int text_size);
-    
-    void agressive_print(String text);
-    void clear_smooth_print();
-    void clear_screen();
-    void clear_entire_screen();
 };

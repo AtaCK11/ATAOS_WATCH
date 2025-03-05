@@ -1,5 +1,5 @@
 #include <Arduino.h>
-#include <spo2_algorithm.h>
+//#include <spo2_algorithm.h>
 #include "ataos.h"
 
 void heart_sensor::run_heart_sensor(void *pvParameters) {
@@ -13,12 +13,9 @@ void heart_sensor::run_heart_sensor(void *pvParameters) {
         if (irValue < 50000) {
             //LOG_INFO(HEART_SENSOR_LOG_TAG, "Finger not detected");
         } else {
-            //LOG_INFO(HEART_SENSOR_LOG_TAG, "Finger detected");
-            // add particleSensor.getIR() and particleSensor.getRed(); into the buffer
-            ir_buffer[buffer_spot] = particleSensor.getIR();
-            red_buffer[buffer_spot] = particleSensor.getRed();
-            buffer_spot++;
-            buffer_spot %= buffer_size; // Wrap the index if needed
+            ir_particle = irValue;
+            sample_hr_plot[sample_hr_plot_spot++] = irValue;
+            sample_hr_plot_spot %= 250; // dürüm
         }
 
         
@@ -27,7 +24,7 @@ void heart_sensor::run_heart_sensor(void *pvParameters) {
             TickType_t delta_ticks = current_tick - last_beat_tick;
             last_beat_tick = current_tick;
 
-            ir_particle = particleSensor.getIR();
+            
             red_particle = particleSensor.getRed();
 
             float deltaSeconds = (delta_ticks * portTICK_PERIOD_MS) / 1000.0;
@@ -52,7 +49,7 @@ void heart_sensor::run_heart_sensor(void *pvParameters) {
         
         
         //LOG_INFO(HEART_SENSOR_LOG_TAG, "IR=%d, BPM=%d, Avg BPM=%d", irValue, mbpm, beat_avg);
-        vTaskDelay(pdMS_TO_TICKS(5));
+        vTaskDelay(pdMS_TO_TICKS(HEART_SENSOR_TIMER));
         
     }
 }
@@ -61,11 +58,11 @@ void heart_sensor::read_temperature(void *pvParameters) {
     ataos_firmware *ataos = (struct ataos_firmware *)pvParameters;
     while (1) {
         particleSensor.enableDIETEMPRDY();
-        vTaskDelay(pdMS_TO_TICKS(1000)); // 1 sec
+        vTaskDelay(pdMS_TO_TICKS(500));
         temperature = particleSensor.readTemperature();
-        LOG_INFO(HEART_SENSOR_LOG_TAG, "Body Temperature: %.2f", temperature);
+        LOG_INFO(HEART_SENSOR_TEMPERATURE_LOG_TAG, "%.2f", temperature);
         particleSensor.disableDIETEMPRDY();
-        vTaskDelay(pdMS_TO_TICKS(60000)); // 1 min
+        vTaskDelay(pdMS_TO_TICKS(READ_TEMPERATURE_TIMER));
         
     }
 }
@@ -73,11 +70,41 @@ void heart_sensor::read_temperature(void *pvParameters) {
 void heart_sensor::read_spo2(void *pvParameters) {
     ataos_firmware *ataos = (struct ataos_firmware *)pvParameters;
     while (1) {
+        
+        ataos->watch_heart_sensor.particleSensor.setPulseAmplitudeRed(0x33); // 0x33 = 10mA
+        vTaskDelay(pdMS_TO_TICKS(100));
+
+        for (int i = 0; i < 100; i++) {
+            ir_buffer[i] = particleSensor.getIR();
+            red_buffer[i] = particleSensor.getRed();
+        }
 
         maxim_heart_rate_and_oxygen_saturation(ir_buffer, buffer_size, red_buffer, &spo2, &spo2_valid, &beat, &beat_valid);
 
-        LOG_INFO(HEART_SENSOR_LOG_TAG, "SpO2: %d, IsValid: %d", spo2, spo2_valid);
-        //LOG_DEBUG(HEART_SENSOR_LOG_TAG, "IR: %d, RED: %d", ir_particle, red_particle);
-        vTaskDelay(pdMS_TO_TICKS(10000)); // 1 min
+        LOG_INFO(HEART_SENSOR_SPO2_LOG_TAG, "%d", spo2);
+
+        ataos->watch_heart_sensor.particleSensor.setPulseAmplitudeRed(0);
+        vTaskDelay(pdMS_TO_TICKS(READ_SPO2_TIMER));
+    }
+}
+
+void heart_sensor::log_sensor_data(void *pvParameters) {
+    ataos_firmware *ataos = (struct ataos_firmware *)pvParameters;
+    while (1) {
+        
+        LOG_INFO(HEART_SENSOR_SPO2_LOG_TAG, "%d", 99);
+        LOG_INFO(HEART_SENSOR_HR_LOG_TAG, "%d", beat_avg);
+        LOG_INFO(HEART_SENSOR_SPO2_LOG_TAG, "%d", 99);
+        LOG_INFO(HEART_SENSOR_TEMPERATURE_LOG_TAG, "%.2f", temperature);
+
+        vTaskDelay(pdMS_TO_TICKS(HEART_SENSOR_LOG_GENERIC_TIMER));
+    }
+}
+
+void heart_sensor::log_ir_data(void *pvParameters) {
+    ataos_firmware *ataos = (struct ataos_firmware *)pvParameters;
+    while (1) {
+        LOG_INFO(HEART_SENSOR_IR_LOG_TAG, "%d", ataos->watch_heart_sensor.ir_particle);
+        vTaskDelay(pdMS_TO_TICKS(50000));
     }
 }

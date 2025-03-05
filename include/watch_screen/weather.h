@@ -14,6 +14,18 @@ typedef struct {
     char requestType[16];  // Example: "Current", "Weekly"
 } WeatherRequest;
 
+/*
+clear sky: açık gökyüzü
+few clouds: az bulutlu
+scattered clouds: dağınık bulutlu
+broken clouds: parçalı bulutlu
+shower rain: sağanak yağmur
+rain: yağmur
+thunderstorm: gök gürültülü fırtına
+snow: kar
+mist: sis
+*/
+
 class weather {
 public:
     void request_weather(void *pvParameters);
@@ -24,7 +36,7 @@ public:
     // write a default constructor for received_weather and requested_weather
     weather() {
         strcpy(received_weather.city, "Ankara");
-        strcpy(received_weather.weather_description, "clear sky");
+        strcpy(received_weather.weather_description, "mist");
         received_weather.temperature = 25.0;
         received_weather.humidity = 50;
         received_weather.wind_speed = 10.0;

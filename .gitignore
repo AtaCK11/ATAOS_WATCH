@@ -9,3 +9,5 @@ sdkconfig.esp32doit-devkit-v1
 include/README
 platformio.ini
 .vscode/settings.json
+/.vscode
+.vscode/settings.json

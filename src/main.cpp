@@ -24,6 +24,8 @@ ataos_firmware ataos;
 // put function declarations here
 void update_tft_screen(void * pvParameters);
 void handle_button_press(void * pvParameters);
+void who_am_i(void * pvParameters);
+void ataos_debug(void * pvParameters);
 
 void setup() {
     Serial.begin(115200);
@@ -63,7 +65,7 @@ void setup() {
     delay(200);
 
     ataos.watch_heart_sensor.particleSensor.setup();
-    ataos.watch_heart_sensor.particleSensor.setPulseAmplitudeRed(0x33); // 0x33 = 10mA
+    ataos.watch_heart_sensor.particleSensor.setPulseAmplitudeRed(0x7F); // 0x33 = 10mA
     ataos.watch_heart_sensor.particleSensor.setPulseAmplitudeGreen(0);
 
     //ataos.watch_heart_sensor.particleSensor.setPulseAmplitudeIR(0); // 0x33 = 10mA
@@ -137,13 +139,27 @@ void setup() {
 
     xTaskCreate([](void * pvParameters) {
         ataos.watch_heart_sensor.run_heart_sensor(pvParameters);
-    }, "Heart Sensor Tasks", 4098, &ataos, 2, NULL);
+    }, "Heart Sensor Tasks", 8192, &ataos, 2, NULL);
     xTaskCreate([](void * pvParameters) {
         ataos.watch_heart_sensor.read_temperature(pvParameters);
     }, "Heart Sensor Temp", 4098, &ataos, 2, NULL);
     xTaskCreate([](void * pvParameters) {
         ataos.watch_heart_sensor.read_spo2(pvParameters);
     }, "Heart Sensor SpO2", 4098, &ataos, 2, NULL);
+    xTaskCreate([](void * pvParameters) {
+        ataos.watch_heart_sensor.log_sensor_data(pvParameters);
+    }, "Heart Sensor Log", 4098, &ataos, 2, NULL);
+    xTaskCreate([](void * pvParameters) {
+        ataos.watch_heart_sensor.log_ir_data(pvParameters);
+    }, "Heart Sensor Log IR", 4098, &ataos, 2, NULL);
+
+    // who_am_i task
+    xTaskCreate(who_am_i, "Who Am I", 4098, NULL, 1, NULL);
+    //xTaskCreate(ataos_debug, "ATAOS Debug", 4098, NULL, 1, NULL);
+
+    xTaskCreate([](void * pvParameters) {
+        ataos.send_data_to_server(pvParameters);
+    }, "Send Data to Server", 8192, &ataos, 2, NULL);
 
     LOG_DEBUG(SETUP_LOG_TAG, "Starting Scheduler");
     //vTaskStartScheduler();
@@ -233,10 +249,10 @@ void update_tft_screen(void * pvParameters) {
             //ataos.watch_tft.setCursor(0, 30);
             //ataos.watch_tft.println(screen_text);
             ataos.watch_screen.current_screen_page = ataos.watch_screen.wannabe_screen_page;
-            LOG_INFO(SCREEN_LOG_TAG, "Screen Updated: %s", screen_text.c_str());
+            LOG_DEBUG(SCREEN_LOG_TAG, "Screen Updated: %s", screen_text.c_str());
         }
 
-        vTaskDelay(pdMS_TO_TICKS(100));
+        vTaskDelay(pdMS_TO_TICKS(WATCH_SCREEN_REFRESH_TIMER));
     }
 }
 
@@ -249,16 +265,14 @@ void handle_button_press(void *pvParameters) {
     while (1) {
         ButtonState current_button_state = BUTTON_NONE;
 
-        // Cooldown: prevent single-click detection after a double-click or hold.
+        // cooldown
         if (ataos.watch_screen.button_in_cooldown) {
             if ((xTaskGetTickCount() - last_press_time) >= pdMS_TO_TICKS(BUTTON_COOLDOWN_TIME)) {
-                // Reset cooldown flag once enough time has passed.
                 ataos.watch_screen.button_in_cooldown = false;
             }
         }
 
         if (!ataos.watch_screen.button_in_cooldown) {
-            // Read the button states. (Assumes HIGH means pressed.)
             if (digitalRead(BUTTON_PIN_LEFT) == HIGH) {
                 current_button_state = BUTTON_LEFT_PRESSED;
             } else if (digitalRead(BUTTON_PIN_HOME) == HIGH) {
@@ -267,12 +281,12 @@ void handle_button_press(void *pvParameters) {
                 current_button_state = BUTTON_RIGHT_PRESSED;
             }
 
-            // Debounce: if the reading has changed, update the debounce timer.
+            // debounce
             if (current_button_state != ataos.watch_screen.last_button_state) {
                 last_debounce_time = xTaskGetTickCount();
             }
 
-            // After the debounce delay, check if the state has really changed.
+            // after the debounce delay, check if the state has really changed.
             if ((xTaskGetTickCount() - last_debounce_time) > pdMS_TO_TICKS(BUTTON_DEBOUNCE_DELAY)) {
                 if (current_button_state != ataos.watch_screen.button_state) {
                     ataos.watch_screen.button_state = current_button_state;
@@ -281,7 +295,7 @@ void handle_button_press(void *pvParameters) {
                         // Check for a double click: same button pressed within the double click interval.
                         if (ataos.watch_screen.button_state == last_button_pressed &&
                             ((xTaskGetTickCount() - last_press_time) < pdMS_TO_TICKS(BUTTON_DOUBLE_CLICK_TIME))) {
-                            // Double click detected: update the state accordingly.
+                            // double click
                             switch (ataos.watch_screen.button_state) {
                                 case BUTTON_LEFT_PRESSED:
                                     ataos.watch_screen.button_state = BUTTON_LEFT_DOUBLE_CLICK;
@@ -299,11 +313,11 @@ void handle_button_press(void *pvParameters) {
                                     break;
                             }
                             waiting_for_double_click = false;
-                            // Set cooldown to prevent immediate single-click detection.
+                            // Set cooldown
                             ataos.watch_screen.button_in_cooldown = true;
                             last_press_time = xTaskGetTickCount();
                         } else {
-                            // Single click detected, but wait to see if a double click follows.
+                            // Single click detected, but wait to see if a double click follows
                             waiting_for_double_click = true;
                             last_press_time = xTaskGetTickCount();
                             LOG_DEBUG(BUTTON_LOG_TAG, "Single Click Detected");
@@ -315,10 +329,8 @@ void handle_button_press(void *pvParameters) {
         }
 
         // Check for a button hold.
-        // (Note: digitalRead(last_button_pressed) assumes that the button state values correspond to a valid pin number.)
         if (ataos.watch_screen.button_state != BUTTON_NONE && digitalRead(last_button_pressed) == HIGH) {
             if ((xTaskGetTickCount() - last_press_time) > pdMS_TO_TICKS(BUTTON_HOLD_TIME)) {
-                // Button hold detected; update the state accordingly.
                 switch (last_button_pressed) {
                     case BUTTON_LEFT_PRESSED:
                         ataos.watch_screen.button_state = BUTTON_LEFT_HOLDING;
@@ -335,23 +347,43 @@ void handle_button_press(void *pvParameters) {
                     default:
                         break;
                 }
-                // Set cooldown to prevent immediate single-click detection.
                 ataos.watch_screen.button_in_cooldown = true;
                 last_press_time = xTaskGetTickCount();
             }
         }
 
-        // If waiting for a potential double click but the time expires, clear the flag.
         if (waiting_for_double_click &&
             ((xTaskGetTickCount() - last_press_time) > pdMS_TO_TICKS(BUTTON_DOUBLE_CLICK_TIME))) {
             waiting_for_double_click = false;
             LOG_DEBUG("BUTTON", "Double Click Timeout");
         }
 
-        // Store the current raw reading for the next debounce comparison.
         ataos.watch_screen.last_button_state = current_button_state;
 
-        // Delay the task briefly before the next loop iteration.
         vTaskDelay(pdMS_TO_TICKS(10));
+    }
+}
+
+void who_am_i(void * pvParameters) {
+    while (1) {
+        if (Serial.available() > 0) {
+            String command = Serial.readStringUntil('\n');
+            if (command == "whoami") {
+                String ss = "ATAOS_SMARTWATCH";
+                char aa2[ss.length() + 1];
+                ss.toCharArray(aa2, ss.length() + 1);
+                LOG_DEBUG(WHO_AM_I_LOG_TAG, "%s", aa2);
+            }   else if (command == "whatsmymac") {
+                String ss = WiFi.macAddress();
+                // convert into char array
+                char mac_char_array[ss.length() + 1];
+                ss.toCharArray(mac_char_array, ss.length() + 1);
+                LOG_DEBUG(WHO_AM_I_LOG_TAG, "%s", mac_char_array);
+            } else {
+                LOG_DEBUG(WHO_AM_I_LOG_TAG, "Unknown Command");
+            }
+
+        }
+        vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }
