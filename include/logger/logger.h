@@ -18,6 +18,7 @@
 #define TOPBAR_WEATHER_LOG_TAG "TOPBAR_WEATHER"
 
 #define WHO_AM_I_LOG_TAG "WHO_AM_I"
+#define BATTERY_LOG_TAG "BATTERY"
 
 // To be monitored tags (INFO)
 #define HEART_SENSOR_LOG_TAG "HEART_SENSOR"

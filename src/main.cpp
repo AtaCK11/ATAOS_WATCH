@@ -26,6 +26,7 @@ void update_tft_screen(void * pvParameters);
 void handle_button_press(void * pvParameters);
 void who_am_i(void * pvParameters);
 void ataos_debug(void * pvParameters);
+void check_battery(void * pvParameters);
 
 void setup() {
     Serial.begin(115200);
@@ -53,9 +54,10 @@ void setup() {
     ataos.xUpdateTimeSemaphore = xSemaphoreCreateBinary();
 
     delay(2500);
-    pinMode(BUTTON_PIN_LEFT, INPUT_PULLUP);
-    pinMode(BUTTON_PIN_HOME, INPUT_PULLUP);
-    pinMode(BUTTON_PIN_RIGHT, INPUT_PULLUP);
+    pinMode(BUTTON_PIN_LEFT, INPUT);
+    pinMode(BUTTON_PIN_HOME, INPUT);
+    pinMode(BUTTON_PIN_RIGHT, INPUT);
+    pinMode(ataos.BATTERY_PIN, INPUT);
     delay(200);
 
     if (ataos.watch_heart_sensor.particleSensor.begin(Wire, I2C_SPEED_FAST) == false) {
@@ -94,6 +96,8 @@ void setup() {
         }
         delay(300);
     }
+
+    esp_sleep_enable_ext1_wakeup((1ULL << BUTTON_PIN_LEFT) | (1ULL << BUTTON_PIN_HOME) | (1ULL << BUTTON_PIN_RIGHT), ESP_EXT1_WAKEUP_ANY_HIGH);
 
     delay(3000);
 
@@ -157,16 +161,20 @@ void setup() {
     xTaskCreate(who_am_i, "Who Am I", 4098, NULL, 1, NULL);
     //xTaskCreate(ataos_debug, "ATAOS Debug", 4098, NULL, 1, NULL);
 
+    //xTaskCreate([](void * pvParameters) {
+    //    ataos.send_data_to_server(pvParameters);
+    //}, "Send Data to Server", 8192, &ataos, 2, NULL);
+
+    xTaskCreate(check_battery, "Check Battery", 4098, NULL, 1, NULL);
     xTaskCreate([](void * pvParameters) {
-        ataos.send_data_to_server(pvParameters);
-    }, "Send Data to Server", 8192, &ataos, 2, NULL);
+        ataos.watch_topbar.update_topbar_battery(pvParameters);
+    }, "Upd Battery", 4098, &ataos, 1, NULL);
 
     LOG_DEBUG(SETUP_LOG_TAG, "Starting Scheduler");
     //vTaskStartScheduler();
 }
 
-void loop() {
-    /* boooo! */ }
+void loop() { /* boooo! */ }
 
 void update_tft_screen(void * pvParameters) {
     while (1) {
@@ -385,5 +393,44 @@ void who_am_i(void * pvParameters) {
 
         }
         vTaskDelay(pdMS_TO_TICKS(1000));
+    }
+}
+
+void check_battery(void * pvParameters) {
+    while (1) {
+        int raw = analogRead(ataos.BATTERY_PIN);
+        // The battery can maximum output 2.1V to the pin from voltage divider.
+        // The ESP32 can read voltages 2.45V max.
+        
+        if (ataos.is_charging == 3) {
+            LOG_DEBUG(BATTERY_LOG_TAG, "Battery is charging");
+            ataos.watch_topbar.battery_level = BATT_CHARG;
+            analogWrite(TFT_BLK, 0);
+            vTaskDelay(pdMS_TO_TICKS(50));
+            esp_light_sleep_start();
+            vTaskDelay(pdMS_TO_TICKS(50));
+            analogWrite(TFT_BLK, 4095);
+            ataos.is_charging = 0;
+        } else if (raw == 4095) {
+            LOG_DEBUG(BATTERY_LOG_TAG, "Battery is charging");
+            ataos.watch_topbar.battery_level = BATT_CHARG;
+            ataos.is_charging++;
+        } else if (raw > 3400) {
+            LOG_DEBUG(BATTERY_LOG_TAG, "Battery is full");
+            ataos.watch_topbar.battery_level = BATT_FULL;
+            ataos.is_charging = 0;
+        } else if (raw < 2500 && raw > 1500) {
+            LOG_DEBUG(BATTERY_LOG_TAG, "Battery is LOW");
+            ataos.watch_topbar.battery_level = BATT_LOW;
+            ataos.is_charging = 0;
+        } else if (raw > 2500 && raw < 3500) {
+            LOG_DEBUG(BATTERY_LOG_TAG, "Battery is medium");
+            ataos.watch_topbar.battery_level = BATT_MED;
+            ataos.is_charging = 0;
+        } 
+        
+        LOG_DEBUG(BATTERY_LOG_TAG, "Raw read: %d", raw);
+
+        vTaskDelay(pdMS_TO_TICKS(20000));
     }
 }

@@ -48,6 +48,14 @@ public:
     void send_data_to_server(void *pvParameters);
 
     bool first_start = true;
+    const int BATTERY_PIN = 35;
+    const float R1 = 100000;
+    const float R2 = 100000;
+    const float MAX_VOLTAGE = 4.2;
+
+    int is_charging = 0;
+
+
 
     Adafruit_ST7735 watch_tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_RST);
 

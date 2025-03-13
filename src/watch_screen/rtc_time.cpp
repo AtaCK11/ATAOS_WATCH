@@ -24,7 +24,6 @@ void rtc_time::request_time(void *pvParameters) {
         // print the mac address of  ataos->watch_settings->server_mac_adress
         LOG_DEBUG(TIME_REQUEST_LOG_TAG, "Server MAC Address: %02X:%02X:%02X:%02X:%02X:%02X", ataos->watch_settings.server_mac_adress[0],  ataos->watch_settings.server_mac_adress[1],  ataos->watch_settings.server_mac_adress[2],  ataos->watch_settings.server_mac_adress[3],  ataos->watch_settings.server_mac_adress[4],  ataos->watch_settings.server_mac_adress[5]);
 
-        // Wake up, do ESP-NOW call with the server (call API, get time data)
         LOG_DEBUG(TIME_REQUEST_LOG_TAG, "Enabling ESP-NOW...");
 
         if (WiFi.getMode() != WIFI_STA) {

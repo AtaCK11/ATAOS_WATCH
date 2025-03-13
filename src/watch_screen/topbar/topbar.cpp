@@ -71,10 +71,29 @@ void topbar::update_topbar_weather(void *pvParameters) {
 
         ataos->watch_tft.setCursor(30, 9);
         ataos->watch_tft.setTextSize(1);
-        String temp = String((int)ataos->watch_weather.received_weather.temperature) + "\"C";
+        String temp = String((int)ataos->watch_weather.received_weather.temperature) + "\"C          ";
         ataos->clear_smooth_print();
         ataos->smooth_print(temp);
 
         vTaskDelay(pdMS_TO_TICKS(UPDATE_TOPBAR_TIMER)); // 60 seconds
+    }
+}
+
+
+void topbar::update_topbar_battery(void *pvParameters) {
+    ataos_firmware *ataos = (struct ataos_firmware *)pvParameters;
+    while (1) {
+
+        if (ataos->watch_topbar.battery_level == BATT_FULL) {
+            ataos->watch_tft.drawRGBBitmap(127, 3, epd_bitmap_battery_full, 28, 15);
+        } else if (ataos->watch_topbar.battery_level == BATT_LOW) {
+            ataos->watch_tft.drawRGBBitmap(127, 3, epd_bitmap_battery_low, 28, 15);
+        } else if (ataos->watch_topbar.battery_level == BATT_MED) {
+            ataos->watch_tft.drawRGBBitmap(127, 3, epd_bitmap_battery_medium, 28, 15);
+        } else if (ataos->watch_topbar.battery_level == BATT_CHARG) {
+            ataos->watch_tft.drawRGBBitmap(127, 3, epd_bitmap_battery_charging, 28, 15);
+        }
+
+        vTaskDelay(pdMS_TO_TICKS(UPDATE_TOPBAR_BATT_TIMER)); // 60 seconds
     }
 }
