@@ -33,10 +33,10 @@ void setup() {
     LOG_DEBUG(SETUP_LOG_TAG, "- ATAOS v1-in-DEV");
     LOG_DEBUG(SETUP_LOG_TAG, "configTICK_RATE_HZ = %d", configTICK_RATE_HZ);
     
-    delay(100);
+    delay(500);
 
-    Wire.begin(26, 27); // SDA, SCL
-    delay(100);
+    Wire.begin(27, 26); // SDA, SCL
+    delay(500);
 
     Serial.print("ATAOS_WATCH MAC Address: ");
     Serial.println(WiFi.macAddress());
@@ -46,7 +46,7 @@ void setup() {
     ataos.watch_tft.setRotation(1);
 
     ataos.watch_tft.fillScreen(ST7735_BLACK);
-    ataos.watch_tft.drawBitmap(20, 4, epd_bitmap_cankaya_logo, 120, 120, TFT_YELLOW_COLOR);
+    //ataos.watch_tft.drawBitmap(20, 4, epd_bitmap_cankaya_logo, 120, 120, TFT_YELLOW_COLOR);
 
     ataos.xWeatherScreenSemaphore = xSemaphoreCreateBinary();
     ataos.xHomeScreenSemaphore = xSemaphoreCreateBinary();
@@ -58,13 +58,13 @@ void setup() {
     pinMode(BUTTON_PIN_HOME, INPUT);
     pinMode(BUTTON_PIN_RIGHT, INPUT);
     pinMode(ataos.BATTERY_PIN, INPUT);
-    delay(200);
+    delay(500);
 
     if (ataos.watch_heart_sensor.particleSensor.begin(Wire, I2C_SPEED_FAST) == false) {
         LOG_ERROR(HEART_SENSOR_LOG_TAG, "MAX30105 was not found. Please check wiring/power. ");
         return;
     }
-    delay(200);
+    delay(500);
 
     ataos.watch_heart_sensor.particleSensor.setup();
     ataos.watch_heart_sensor.particleSensor.setPulseAmplitudeRed(0x7F); // 0x33 = 10mA
@@ -128,18 +128,14 @@ void setup() {
         ataos.watch_home_screen.draw_home_screen(pvParameters);
     }, "Home Screen", 4098, &ataos, 2, NULL);
 
-    xTaskCreate([](void * pvParameters) {
-        ataos.watch_heart_screen.draw_heart_screen(pvParameters);
-    }, "Heart Screen", 4098, &ataos, 2, NULL);
-    xTaskCreate([](void * pvParameters) {
-        ataos.watch_heart_screen.heart_screen_update_bpm(pvParameters);
-    }, "Heart Screen BPM", 4098, &ataos, 2, NULL);
     
+    delay(100);
 
     xTaskCreate([](void * pvParameters) {
         ataos.watch_time.calculate_time(pvParameters);
     }, "RTC Timer", 4098, &ataos, 1, NULL);
 
+    delay(100);
 
     xTaskCreate([](void * pvParameters) {
         ataos.watch_heart_sensor.run_heart_sensor(pvParameters);
@@ -150,12 +146,25 @@ void setup() {
     xTaskCreate([](void * pvParameters) {
         ataos.watch_heart_sensor.read_spo2(pvParameters);
     }, "Heart Sensor SpO2", 4098, &ataos, 2, NULL);
+
+    delay(500);
+
     xTaskCreate([](void * pvParameters) {
         ataos.watch_heart_sensor.log_sensor_data(pvParameters);
     }, "Heart Sensor Log", 4098, &ataos, 2, NULL);
     xTaskCreate([](void * pvParameters) {
         ataos.watch_heart_sensor.log_ir_data(pvParameters);
     }, "Heart Sensor Log IR", 4098, &ataos, 2, NULL);
+
+    
+    delay(500);
+
+    xTaskCreate([](void * pvParameters) {
+        ataos.watch_heart_screen.draw_heart_screen(pvParameters);
+    }, "Heart Screen", 4098, &ataos, 2, NULL);
+    xTaskCreate([](void * pvParameters) {
+        ataos.watch_heart_screen.heart_screen_update_bpm(pvParameters);
+    }, "Heart Screen BPM", 4098, &ataos, 2, NULL);
 
     // who_am_i task
     xTaskCreate(who_am_i, "Who Am I", 4098, NULL, 1, NULL);

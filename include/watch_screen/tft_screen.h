@@ -1,12 +1,12 @@
 #pragma once
 
 // Pins
-#define TFT_CS      5
+#define TFT_CS      15
 #define TFT_RST     4
 #define TFT_DC      2
-#define TFT_SCK    18
-#define TFT_MOSI   23
-#define TFT_BLK    15
+#define TFT_SCK     18
+#define TFT_MOSI    23
+#define TFT_BLK     13
 
 // Colors
 #define TFT_YELLOW_COLOR    0xFFE0

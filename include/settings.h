@@ -33,6 +33,7 @@ public:
     // not like i'll use or sell it sooooooooo i'll just leave the idea here
     // void change_settings_port_read(void *pvParameters);
     uint8_t server_mac_adress[6] = {0xA0, 0xB7, 0x65, 0x28, 0xCE, 0xA0};
+    char server_ip_address[32] = "";
     const char* PMK_KEY_STR = "U@Kw%nV&PzbRK2WM";
     const char* LMK_KEY_STR = "Ruth:WqH9@j%h5qg";
 };
