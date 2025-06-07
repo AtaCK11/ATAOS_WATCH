@@ -1,8 +1,8 @@
 #pragma once
 
 // Button Pins
-#define BUTTON_PIN_LEFT    32
-#define BUTTON_PIN_HOME    33
+#define BUTTON_PIN_LEFT    33
+#define BUTTON_PIN_HOME    32
 #define BUTTON_PIN_RIGHT   25
 
 #define BUTTON_DEBOUNCE_DELAY        50     // debounce delay
