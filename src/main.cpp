@@ -54,10 +54,10 @@ void setup() {
     ataos.xUpdateTimeSemaphore = xSemaphoreCreateBinary();
 
     delay(2500);
-    pinMode(BUTTON_PIN_LEFT, INPUT);
-    pinMode(BUTTON_PIN_HOME, INPUT);
-    pinMode(BUTTON_PIN_RIGHT, INPUT);
-    pinMode(ataos.BATTERY_PIN, INPUT);
+    pinMode(BUTTON_PIN_LEFT, INPUT_PULLUP);
+    pinMode(BUTTON_PIN_HOME, INPUT_PULLUP);
+    pinMode(BUTTON_PIN_RIGHT, INPUT_PULLUP);
+    pinMode(ataos.BATTERY_PIN, INPUT_PULLUP);
     delay(500);
 
     if (ataos.watch_heart_sensor.particleSensor.begin(Wire, I2C_SPEED_FAST) == false) {
@@ -111,12 +111,12 @@ void setup() {
     xTaskCreate(update_tft_screen, "Update TFT Screen", 4098, NULL, 3, NULL);
     xTaskCreate(handle_button_press, "Handle Button Press", 4098, NULL, 3, NULL);
 
-    xTaskCreate([](void * pvParameters) {
-        ataos.watch_weather.request_weather(pvParameters);
-    }, "Request Weather", 4098, &ataos, 2, NULL);
+
+    delay(1000);
+
     xTaskCreate([](void * pvParameters) {
         ataos.watch_time.request_time(pvParameters);
-    }, "Request Time", 4098, &ataos, 2, NULL);
+    }, "Request Time", 4098, &ataos, 3, NULL);
 
     xTaskCreate([](void * pvParameters) {
         ataos.watch_topbar.update_topbar_weather(pvParameters);
