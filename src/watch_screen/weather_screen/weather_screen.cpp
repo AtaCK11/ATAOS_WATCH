@@ -16,7 +16,7 @@ void weather_screen::draw_weather_screen(void *pvParameters) {
             LOG_DEBUG(WEATHER_SCREEN_LOG_TAG, "Humidity: %d", ataos->watch_weather.received_weather.humidity);
             LOG_DEBUG(WEATHER_SCREEN_LOG_TAG, "Wind Speed: %.2f", ataos->watch_weather.received_weather.wind_speed);
 
-            if (strcmp(ataos->watch_weather.received_weather.weather_description, "clear sky") == 0) {
+            if (strcmp(ataos->watch_weather.received_weather.weather_description, "Gunesli") == 0) {
                 // clear sky
                 ataos->watch_tft.drawRGBBitmap(64, 30, epd_bitmap_clear_sky_static, 31, 31);
             } else if (strcmp(ataos->watch_weather.received_weather.weather_description, "few clouds") == 0) {

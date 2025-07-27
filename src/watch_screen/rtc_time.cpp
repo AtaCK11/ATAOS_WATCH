@@ -1,6 +1,5 @@
 #include <esp_now.h>
 #include <WiFi.h>
-#include <esp_wifi.h>
 
 #include "ataos.h"
 #include "watch_screen/rtc_time.h"
@@ -36,7 +35,7 @@ void rtc_time::request_time(void *pvParameters) {
 
         esp_now_peer_info_t peerInfo = {};
         memcpy(peerInfo.peer_addr,  ataos->watch_settings.server_mac_adress, 6);
-        peerInfo.channel = 0;
+        peerInfo.channel = 1;
         peerInfo.encrypt = false;
         if (esp_now_add_peer(&peerInfo) != ESP_OK) {
             LOG_ERROR(TIME_REQUEST_LOG_TAG, "Failed to add ESP-NOW peer!");

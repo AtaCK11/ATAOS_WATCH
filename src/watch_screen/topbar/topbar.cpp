@@ -26,7 +26,7 @@ void topbar::update_topbar_weather(void *pvParameters) {
         LOG_DEBUG(TOPBAR_WEATHER_LOG_TAG, "Weather Data: %s, %s, %.2f, %d, %.2f", ataos->watch_weather.received_weather.city, ataos->watch_weather.received_weather.weather_description, ataos->watch_weather.received_weather.temperature, ataos->watch_weather.received_weather.humidity, ataos->watch_weather.received_weather.wind_speed);
 
         // update the topbar with the weather description and show the corresponding weather icon
-        if (strcmp(ataos->watch_weather.received_weather.weather_description, "clear sky") == 0) {
+        if (strcmp(ataos->watch_weather.received_weather.weather_description, "Gunesli") == 0) {
             // clear sky
             LOG_DEBUG(TOPBAR_WEATHER_LOG_TAG, "Clear Sky");
             ataos->watch_tft.drawRGBBitmap(5, 3, epd_bitmap_topbar_clear_sky, 20, 20);

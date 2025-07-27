@@ -22,19 +22,23 @@
 
 // RTC
 #define RTC_UPDATE_TIMER 1000
-#define RTC_CALCULATE_TIME 60001
+#define RTC_CALCULATE_TIME 58001
 
 // Sensor Data Logger
 #define HEART_SENSOR_LOG_GENERIC_TIMER 5000
+#define HEART_SENSOR_ESP_NOW_LOG_TIMER 10000
 #define HEART_SENSOR_LOG_IR_TIMER 20
 
 class settings {
 public:
     // not like i'll use or sell it sooooooooo i'll just leave the idea here
     // void change_settings_port_read(void *pvParameters);
-    // 8C:A4:08:80:40:A5
+    // 8C:A4:08:80:60:AB
     // e0:e2:e6:63:0f:50
-    uint8_t server_mac_adress[6] = {0xE0, 0xE2, 0xE6, 0x63, 0x0F, 0x50};
+    // e0:e2:e6:63:0f:51
+    //uint8_t server_mac_adress[6] = {0xE0, 0xE2, 0xE6, 0x63, 0x0F, 0x50}; // STA
+    //uint8_t server_mac_adress[6] = {0x8C, 0xA4, 0x08, 0x80, 0x60, 0xAB}; // DEFAULT MAC
+    uint8_t server_mac_adress[6] = {0xE0, 0xE2, 0xE6, 0x63, 0x0F, 0x51}; // AP
     char server_ip_address[32] = "";
     const char* PMK_KEY_STR = "U@Kw%nV&PzbRK2WM";
     const char* LMK_KEY_STR = "Ruth:WqH9@j%h5qg";

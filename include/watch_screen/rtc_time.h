@@ -27,9 +27,9 @@ public:
     // write a default constructor for received_weather and requested_weather
     rtc_time() {
         strcpy(received_time.day_name, "Sali");
-        strcpy(received_time.date, "13.02.2025");
-        received_time.hour = 12;
-        received_time.minute = 35;
+        strcpy(received_time.date, "10.06.2025");
+        received_time.hour = 13;
+        received_time.minute = 30;
         received_time.second = 31;
 
         strcpy(requested_time.requestType, "Time");

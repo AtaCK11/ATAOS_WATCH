@@ -22,6 +22,7 @@ public:
     void read_spo2(void *pvParameters);
     void log_sensor_data(void *pvParameters);
     void log_ir_data(void *pvParameters);
+    void esp_now_send_hr(void *pvParameters);
 
 
     MAX30105 particleSensor;

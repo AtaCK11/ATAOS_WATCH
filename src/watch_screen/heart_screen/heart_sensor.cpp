@@ -2,6 +2,21 @@
 //#include <spo2_algorithm.h>
 #include "ataos.h"
 
+#include <esp_now.h>
+#include <WiFi.h>
+
+// data for heart sensor esp-now
+#define HEART_SENSOR_ESPNOW_TAG 1
+#define HEART_SENSOR_TEMPERATURE_ESPNOW_TAG 2
+#define HEART_SENSOR_SPO2_ESPNOW_TAG 3
+
+typedef struct {
+    int heart_rate;
+    float temperature;
+    int spo2;
+} HRInformation;
+
+
 void heart_sensor::run_heart_sensor(void *pvParameters) {
     ataos_firmware *ataos = (struct ataos_firmware *)pvParameters;
     TickType_t last_beat_tick = xTaskGetTickCount();
@@ -91,15 +106,64 @@ void heart_sensor::read_spo2(void *pvParameters) {
 void heart_sensor::log_sensor_data(void *pvParameters) {
     ataos_firmware *ataos = (struct ataos_firmware *)pvParameters;
     while (1) {
-        
-        LOG_INFO(HEART_SENSOR_SPO2_LOG_TAG, "%d", 99);
+
         LOG_INFO(HEART_SENSOR_HR_LOG_TAG, "%d", beat_avg);
-        LOG_INFO(HEART_SENSOR_SPO2_LOG_TAG, "%d", 99);
         LOG_INFO(HEART_SENSOR_TEMPERATURE_LOG_TAG, "%.2f", temperature);
+
+
 
         vTaskDelay(pdMS_TO_TICKS(HEART_SENSOR_LOG_GENERIC_TIMER));
     }
 }
+
+void heart_sensor::esp_now_send_hr(void *pvParameters) {
+    ataos_firmware *ataos = (struct ataos_firmware *)pvParameters;
+    while (1) {
+        // print the mac address of  ataos->watch_settings->server_mac_adress
+        LOG_DEBUG(TIME_REQUEST_LOG_TAG, "Server MAC Address: %02X:%02X:%02X:%02X:%02X:%02X", ataos->watch_settings.server_mac_adress[0],  ataos->watch_settings.server_mac_adress[1],  ataos->watch_settings.server_mac_adress[2],  ataos->watch_settings.server_mac_adress[3],  ataos->watch_settings.server_mac_adress[4],  ataos->watch_settings.server_mac_adress[5]);
+
+        LOG_DEBUG(TIME_REQUEST_LOG_TAG, "Enabling ESP-NOW...");
+
+        if (WiFi.getMode() != WIFI_STA) {
+            WiFi.mode(WIFI_STA);
+        }
+        vTaskDelay(pdMS_TO_TICKS(200)); //delay(100);
+        if (esp_now_init() != ESP_OK) {
+            LOG_ERROR(TIME_REQUEST_LOG_TAG, "ESP-NOW initialization failed!");
+        }
+
+        esp_now_peer_info_t peerInfo = {};
+        memcpy(peerInfo.peer_addr,  ataos->watch_settings.server_mac_adress, 6);
+        peerInfo.channel = 1;
+        peerInfo.encrypt = false;
+        if (esp_now_add_peer(&peerInfo) != ESP_OK) {
+            LOG_ERROR(TIME_REQUEST_LOG_TAG, "Failed to add ESP-NOW peer!");
+        }
+
+        // send data
+        HRInformation hr_info;
+        hr_info.heart_rate = beat_avg;
+        hr_info.temperature = temperature;
+        hr_info.spo2 = spo2;
+        esp_err_t result = esp_now_send(ataos->watch_settings.server_mac_adress, (uint8_t *)&hr_info, sizeof(hr_info));
+        if (result == ESP_OK) {
+            LOG_DEBUG(TIME_REQUEST_LOG_TAG, "Heart rate data sent!");
+        } else {
+            LOG_ERROR(TIME_REQUEST_LOG_TAG, "Failed to send heart rate data! Error: 0x%X", result);
+        }
+
+        // Go to sleep
+        LOG_DEBUG(TIME_REQUEST_LOG_TAG, "Disabling ESP-NOW...");
+        esp_now_unregister_recv_cb();
+        esp_now_deinit();
+        //esp_now
+        WiFi.mode(WIFI_OFF);
+
+
+        vTaskDelay(pdMS_TO_TICKS(HEART_SENSOR_ESP_NOW_LOG_TIMER)); // Sleep for 10 seconds before the next cycle --> will be around 5 hours or if its requested by the user
+    }
+}
+
 
 void heart_sensor::log_ir_data(void *pvParameters) {
     ataos_firmware *ataos = (struct ataos_firmware *)pvParameters;

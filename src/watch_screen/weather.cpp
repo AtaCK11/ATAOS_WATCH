@@ -38,7 +38,7 @@ void weather::request_weather(void *pvParameters) {
         
         esp_now_peer_info_t peer_info = {};
         memcpy(peer_info.peer_addr,  ataos->watch_settings.server_mac_adress, 6);
-        peer_info.channel = 0;
+        peer_info.channel = 1;
         peer_info.encrypt = false;
         if (esp_now_add_peer(&peer_info) != ESP_OK) {
             LOG_ERROR(WEATHER_REQUEST_LOG_TAG, "Failed to add ESP-NOW peer!");

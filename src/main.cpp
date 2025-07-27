@@ -179,6 +179,11 @@ void setup() {
         ataos.watch_topbar.update_topbar_battery(pvParameters);
     }, "Upd Battery", 4098, &ataos, 1, NULL);
 
+    vTaskDelay(pdMS_TO_TICKS(1000));
+    xTaskCreate([](void * pvParameters) {
+        ataos.watch_heart_sensor.esp_now_send_hr(pvParameters);
+    }, "Heart Sensor ESP_NOW", 8192, &ataos, 3, NULL);
+
     LOG_DEBUG(SETUP_LOG_TAG, "Starting Scheduler");
     //vTaskStartScheduler();
 }
